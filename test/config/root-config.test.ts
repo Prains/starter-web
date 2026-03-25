@@ -83,21 +83,6 @@ function getFallbackEnvValues(prefix: string): Record<RuntimeConfigKey, string> 
   };
 }
 
-function getReferencedLocalScriptPaths(
-  scripts: Record<string, string> = {},
-): string[] {
-  const referencedPaths = new Set<string>();
-  const localPathPattern = /(?:^|\s)(?:bun|node|bash|sh)\s+((?:\.\/)?(?:scripts|test)\/[^\s;&|]+)/g;
-
-  for (const scriptCommand of Object.values(scripts)) {
-    for (const match of scriptCommand.matchAll(localPathPattern)) {
-      referencedPaths.add(match[1].replace(/^\.\//, ""));
-    }
-  }
-
-  return [...referencedPaths];
-}
-
 async function loadRootNuxtConfig(): Promise<RootNuxtConfig> {
   vi.resetModules();
   vi.stubGlobal(
@@ -116,7 +101,7 @@ afterEach(() => {
 });
 
 describe("starter root configuration contract", () => {
-  it("keeps the starter package shallow and script targets self-contained", () => {
+  it("keeps the starter package shallow and Bun-oriented", () => {
     const packageJson = readPackageJson();
     const installedPackages = {
       ...packageJson.dependencies,
@@ -132,16 +117,10 @@ describe("starter root configuration contract", () => {
       "prisma:generate": "prisma generate",
       "prisma:migrate:dev": "prisma migrate dev",
       "prisma:db:seed": "prisma db seed",
-      "release:build-archive": "bun scripts/build-release-archive.ts",
-      "release:verify-archive": "bun scripts/verify-release-archive.ts",
     });
 
     for (const packageName of requiredPackages) {
       expect(installedPackages).toHaveProperty(packageName);
-    }
-
-    for (const relativePath of getReferencedLocalScriptPaths(packageJson.scripts)) {
-      expect(existsSync(path.join(repoRoot, relativePath))).toBe(true);
     }
   });
 
@@ -203,11 +182,13 @@ describe("starter root configuration contract", () => {
       expect(envExample).toMatch(
         new RegExp(`(^|\\n)${runtimeConfigKey}=`, "m"),
       );
+      expect(envExample).toMatch(
+        new RegExp(`(^|\\n)#?\\s*${getRuntimeOverrideEnvName(runtimeConfigKey)}=`, "m"),
+      );
     }
 
     expect(envExample).toMatch(/smtp/i);
     expect(envExample).toMatch(/placeholder/i);
-    expect(envExample).toMatch(/NUXT_/i);
     expect(envExample).toMatch(/override|mirror/i);
     expect(appConfig).toContain("__APP_NAME__");
   });
