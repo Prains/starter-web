@@ -1,16 +1,17 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const repoRoot = path.resolve(import.meta.dirname, "../..");
 const packageJsonPath = path.join(repoRoot, "package.json");
-const nuxtConfigPath = path.join(repoRoot, "nuxt.config.ts");
 const envExamplePath = path.join(repoRoot, ".env.example");
 const appConfigPath = path.join(repoRoot, "app/app.config.ts");
+const cssEntrypointPath = path.join(repoRoot, "app/assets/css/main.css");
 
 const requiredNuxtModules = [
   "@nuxt/eslint",
   "@nuxt/ui",
+  "@pinia/nuxt",
   "@pinia/colada-nuxt",
   "@vueuse/nuxt",
 ] as const;
@@ -39,6 +40,8 @@ const runtimeConfigKeys = [
   "SMTP_FROM",
 ] as const;
 
+type RuntimeConfigKey = (typeof runtimeConfigKeys)[number];
+
 type PackageJson = {
   name: string;
   packageManager?: string;
@@ -47,54 +50,73 @@ type PackageJson = {
   devDependencies?: Record<string, string>;
 };
 
+type RootRuntimeConfig = Partial<Record<RuntimeConfigKey, string | undefined>>;
+
+type RootNuxtConfig = {
+  css?: string[];
+  modules?: string[];
+  nitro?: {
+    preset?: string;
+  };
+  runtimeConfig?: RootRuntimeConfig;
+  ssr?: boolean;
+};
+
 function readPackageJson(): PackageJson {
   return JSON.parse(readFileSync(packageJsonPath, "utf8")) as PackageJson;
 }
 
-function readNuxtConfigSource(): string {
-  return readFileSync(nuxtConfigPath, "utf8");
+function getRuntimeOverrideEnvName(runtimeConfigKey: RuntimeConfigKey): string {
+  return `NUXT_${runtimeConfigKey}`;
 }
 
-function escapeForRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function getFallbackEnvValues(prefix: string): Record<RuntimeConfigKey, string> {
+  return {
+    BETTER_AUTH_SECRET: `${prefix}-secret`,
+    BETTER_AUTH_URL: `https://${prefix}.example.com`,
+    AUTH_EMAIL_MODE: `${prefix}-mode`,
+    SMTP_HOST: `${prefix}.smtp.example.com`,
+    SMTP_PORT: prefix === "runtime" ? "2525" : "1025",
+    SMTP_USER: `${prefix}-user`,
+    SMTP_PASS: `${prefix}-pass`,
+    SMTP_FROM: `${prefix}@example.com`,
+  };
 }
 
-function extractObjectBlock(source: string, propertyName: string): string {
-  const propertyIndex = source.indexOf(`${propertyName}:`);
+function getReferencedLocalScriptPaths(
+  scripts: Record<string, string> = {},
+): string[] {
+  const referencedPaths = new Set<string>();
+  const localPathPattern = /(?:^|\s)(?:bun|node|bash|sh)\s+((?:\.\/)?(?:scripts|test)\/[^\s;&|]+)/g;
 
-  if (propertyIndex === -1) {
-    throw new Error(`Missing ${propertyName} block`);
-  }
-
-  const objectStartIndex = source.indexOf("{", propertyIndex);
-
-  if (objectStartIndex === -1) {
-    throw new Error(`Missing opening brace for ${propertyName}`);
-  }
-
-  let depth = 0;
-
-  for (let index = objectStartIndex; index < source.length; index += 1) {
-    const character = source[index];
-
-    if (character === "{") {
-      depth += 1;
-    }
-
-    if (character === "}") {
-      depth -= 1;
-
-      if (depth === 0) {
-        return source.slice(objectStartIndex + 1, index);
-      }
+  for (const scriptCommand of Object.values(scripts)) {
+    for (const match of scriptCommand.matchAll(localPathPattern)) {
+      referencedPaths.add(match[1].replace(/^\.\//, ""));
     }
   }
 
-  throw new Error(`Missing closing brace for ${propertyName}`);
+  return [...referencedPaths];
 }
+
+async function loadRootNuxtConfig(): Promise<RootNuxtConfig> {
+  vi.resetModules();
+  vi.stubGlobal(
+    "defineNuxtConfig",
+    (config: RootNuxtConfig): RootNuxtConfig => config,
+  );
+
+  const imported = await import("../../nuxt.config.ts");
+
+  return imported.default as RootNuxtConfig;
+}
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
 describe("starter root configuration contract", () => {
-  it("keeps the starter package shallow and Bun-oriented", () => {
+  it("keeps the starter package shallow and script targets self-contained", () => {
     const packageJson = readPackageJson();
     const installedPackages = {
       ...packageJson.dependencies,
@@ -110,55 +132,80 @@ describe("starter root configuration contract", () => {
       "prisma:generate": "prisma generate",
       "prisma:migrate:dev": "prisma migrate dev",
       "prisma:db:seed": "prisma db seed",
+      "release:build-archive": "bun scripts/build-release-archive.ts",
+      "release:verify-archive": "bun scripts/verify-release-archive.ts",
     });
 
     for (const packageName of requiredPackages) {
       expect(installedPackages).toHaveProperty(packageName);
     }
+
+    for (const relativePath of getReferencedLocalScriptPaths(packageJson.scripts)) {
+      expect(existsSync(path.join(repoRoot, relativePath))).toBe(true);
+    }
   });
 
-  it("enables SSR, wires CSS, and exposes only the expected auth runtime config", () => {
-    const nuxtConfigSource = readNuxtConfigSource();
-    const runtimeConfigBlock = extractObjectBlock(nuxtConfigSource, "runtimeConfig");
-    const runtimeConfigAssignments = Array.from(
-      runtimeConfigBlock.matchAll(/^\s*([A-Z_]+)\s*:/gm),
-      ([, key]) => key,
-    );
-
-    expect(nuxtConfigSource).toMatch(/\bssr:\s*true\b/);
-    expect(nuxtConfigSource).toMatch(/\bpreset:\s*"bun"/);
-
-    for (const moduleName of requiredNuxtModules) {
-      expect(nuxtConfigSource).toMatch(
-        new RegExp(`['"]${escapeForRegExp(moduleName)}['"]`),
-      );
-    }
-
-    expect(nuxtConfigSource).toMatch(/assets\/css\/main\.css/);
-    expect(runtimeConfigAssignments.sort()).toEqual([...runtimeConfigKeys].sort());
+  it("uses matching NUXT_* envs for runtime overrides", async () => {
+    const runtimeValues = getFallbackEnvValues("runtime");
+    const fallbackValues = getFallbackEnvValues("fallback");
 
     for (const runtimeConfigKey of runtimeConfigKeys) {
-      expect(runtimeConfigBlock).toMatch(
-        new RegExp(
-          `${runtimeConfigKey}:\\s*process\\.env\\.${runtimeConfigKey}\\b`,
-        ),
+      vi.stubEnv(runtimeConfigKey, fallbackValues[runtimeConfigKey]);
+      vi.stubEnv(
+        getRuntimeOverrideEnvName(runtimeConfigKey),
+        runtimeValues[runtimeConfigKey],
+      );
+    }
+
+    const rootConfig = await loadRootNuxtConfig();
+
+    expect(rootConfig.ssr).toBe(true);
+    expect(rootConfig.nitro?.preset).toBe("bun");
+    expect(rootConfig.css).toContain("~/assets/css/main.css");
+    expect(rootConfig.modules).toEqual(
+      expect.arrayContaining([...requiredNuxtModules]),
+    );
+    expect(Object.keys(rootConfig.runtimeConfig ?? {}).sort()).toEqual(
+      [...runtimeConfigKeys].sort(),
+    );
+
+    for (const runtimeConfigKey of runtimeConfigKeys) {
+      expect(rootConfig.runtimeConfig?.[runtimeConfigKey]).toBe(
+        runtimeValues[runtimeConfigKey],
       );
     }
   });
 
-  it("keeps the starter env and app config placeholders intact", () => {
+  it("falls back to unprefixed envs for local development defaults", async () => {
+    const fallbackValues = getFallbackEnvValues("local");
+
+    for (const runtimeConfigKey of runtimeConfigKeys) {
+      vi.stubEnv(runtimeConfigKey, fallbackValues[runtimeConfigKey]);
+    }
+
+    const rootConfig = await loadRootNuxtConfig();
+
+    for (const runtimeConfigKey of runtimeConfigKeys) {
+      expect(rootConfig.runtimeConfig?.[runtimeConfigKey]).toBe(
+        fallbackValues[runtimeConfigKey],
+      );
+    }
+  });
+
+  it("documents canonical auth envs and keeps app placeholders intact", () => {
     const envExample = readFileSync(envExamplePath, "utf8");
     const appConfig = readFileSync(appConfigPath, "utf8");
 
+    expect(existsSync(cssEntrypointPath)).toBe(true);
     expect(envExample).toContain("DATABASE_URL=");
 
     for (const runtimeConfigKey of runtimeConfigKeys) {
-      expect(envExample).toContain(`${runtimeConfigKey}=`);
+      expect(envExample).toContain(`${getRuntimeOverrideEnvName(runtimeConfigKey)}=`);
     }
 
     expect(envExample).toMatch(/smtp/i);
     expect(envExample).toMatch(/placeholder/i);
+    expect(envExample).toMatch(/fallback/i);
     expect(appConfig).toContain("__APP_NAME__");
-    expect(readFileSync(nuxtConfigPath, "utf8")).toContain("assets/css/main.css");
   });
 });

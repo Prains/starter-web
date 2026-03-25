@@ -1,3 +1,17 @@
+const runtimeConfigDefaults = {
+  BETTER_AUTH_SECRET:
+    process.env.NUXT_BETTER_AUTH_SECRET ?? process.env.BETTER_AUTH_SECRET,
+  BETTER_AUTH_URL:
+    process.env.NUXT_BETTER_AUTH_URL ?? process.env.BETTER_AUTH_URL,
+  AUTH_EMAIL_MODE:
+    process.env.NUXT_AUTH_EMAIL_MODE ?? process.env.AUTH_EMAIL_MODE,
+  SMTP_HOST: process.env.NUXT_SMTP_HOST ?? process.env.SMTP_HOST,
+  SMTP_PORT: process.env.NUXT_SMTP_PORT ?? process.env.SMTP_PORT,
+  SMTP_USER: process.env.NUXT_SMTP_USER ?? process.env.SMTP_USER,
+  SMTP_PASS: process.env.NUXT_SMTP_PASS ?? process.env.SMTP_PASS,
+  SMTP_FROM: process.env.NUXT_SMTP_FROM ?? process.env.SMTP_FROM,
+};
+
 export default defineNuxtConfig({
   compatibilityDate: "2026-03-25",
   ssr: true,
@@ -8,16 +22,7 @@ export default defineNuxtConfig({
     "@pinia/colada-nuxt",
     "@vueuse/nuxt",
   ],
-  runtimeConfig: {
-    BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
-    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
-    AUTH_EMAIL_MODE: process.env.AUTH_EMAIL_MODE,
-    SMTP_HOST: process.env.SMTP_HOST,
-    SMTP_PORT: process.env.SMTP_PORT,
-    SMTP_USER: process.env.SMTP_USER,
-    SMTP_PASS: process.env.SMTP_PASS,
-    SMTP_FROM: process.env.SMTP_FROM,
-  },
+  runtimeConfig: runtimeConfigDefaults,
   nitro: {
     preset: "bun",
   },
