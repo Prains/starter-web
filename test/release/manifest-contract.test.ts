@@ -43,6 +43,13 @@ describe("starter manifest contract", () => {
       ...manifest.appNameFiles,
     ];
 
+    expect(manifest.packageNameFiles).toEqual(
+      expect.arrayContaining(["package.json", ".env.example", "bun.lock"]),
+    );
+    expect(manifest.appNameFiles).toEqual(
+      expect.arrayContaining(["README.md", "app/app.config.ts", ".env.example"]),
+    );
+
     for (const relativePath of replacementFiles) {
       expect(existsSync(path.join(repoRoot, relativePath))).toBe(true);
     }
