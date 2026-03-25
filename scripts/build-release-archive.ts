@@ -109,9 +109,10 @@ function listArchiveEntriesFromFilesystem(
 }
 
 function listArchiveEntries(repoRoot: string): string[] {
+  const hasGitRepository = existsSync(path.join(repoRoot, ".git"));
   const gitTrackedEntries = listArchiveEntriesFromGit(repoRoot);
 
-  if (gitTrackedEntries.length > 0) {
+  if (hasGitRepository) {
     return gitTrackedEntries;
   }
 

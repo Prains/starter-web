@@ -157,4 +157,46 @@ describe("starter release archive contract", () => {
       rmSync(repoRoot, { recursive: true, force: true });
     }
   });
+
+  it("fails instead of packaging untracked files from a git repo with an empty index", () => {
+    const repoRoot = mkdtempSync(path.join(os.tmpdir(), "starter-release-empty-index-"));
+
+    try {
+      execFileSync("git", ["init", "-b", "develop"], { cwd: repoRoot });
+      writeFileSync(
+        path.join(repoRoot, "package.json"),
+        JSON.stringify({ name: "__PACKAGE_NAME__", version: "0.1.0" }, null, 2),
+      );
+      writeFileSync(
+        path.join(repoRoot, "starter.manifest.json"),
+        JSON.stringify(
+          {
+            schemaVersion: 1,
+            templateVersion: "0.1.0",
+            packageNameToken: "__PACKAGE_NAME__",
+            appNameToken: "__APP_NAME__",
+            packageNameFiles: ["package.json"],
+            appNameFiles: ["README.md", "app/app.config.ts"],
+            copyEnvExampleToEnv: true,
+            defaultGitInit: true,
+          },
+          null,
+          2,
+        ),
+      );
+      writeFileSync(path.join(repoRoot, "nuxt.config.ts"), "export default defineNuxtConfig({});\n");
+      writeFileSync(path.join(repoRoot, ".env.example"), "DATABASE_URL=\n");
+      writeFileSync(path.join(repoRoot, "README.md"), "# __APP_NAME__\n");
+      mkdirSync(path.join(repoRoot, "app"), { recursive: true });
+      writeFileSync(
+        path.join(repoRoot, "app/app.config.ts"),
+        "export default defineAppConfig({ appName: '__APP_NAME__' });\n",
+      );
+      writeFileSync(path.join(repoRoot, "local-secret.txt"), "SHOULD_NOT_SHIP\n");
+
+      expect(() => buildReleaseArchive({ repoRoot })).toThrow(/no files to package/i);
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+    }
+  });
 });
