@@ -118,7 +118,7 @@ describe("better auth server config", () => {
         email: "verify@example.com",
         name: "Verify User",
       },
-      url: "https://example.com/verify-email?token=verify-token",
+      url: "http://localhost:3000/api/auth/verify-email?token=verify-token&callbackURL=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fverify%3Fredirect%3D%252Fapp%252Fnotes",
       token: "verify-token",
     });
     await emailHandlers.sendResetPassword({
@@ -126,27 +126,33 @@ describe("better auth server config", () => {
         email: "reset@example.com",
         name: "Reset User",
       },
-      url: "https://example.com/reset-password?token=reset-token",
+      url: "http://localhost:3000/api/auth/reset-password/reset-token?callbackURL=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Freset%3Fredirect%3D%252Fapp%252Fnotes",
       token: "reset-token",
     });
     await emailHandlers.sendMagicLink({
       email: "magic@example.com",
-      url: "https://example.com/magic-link?token=magic-token",
+      url: "http://localhost:3000/api/auth/magic-link/verify?token=magic-token&callbackURL=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fmagic-link%3Fredirect%3D%252Fapp%252Fnotes",
       token: "magic-token",
     });
 
     expect(logger.info).toHaveBeenCalledTimes(3);
     expect(logger.info).toHaveBeenNthCalledWith(
       1,
-      expect.stringContaining("https://example.com/verify-email?token=verify-token"),
+      expect.stringContaining(
+        "http://localhost:3000/auth/verify?redirect=%2Fapp%2Fnotes&token=verify-token",
+      ),
     );
     expect(logger.info).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining("https://example.com/reset-password?token=reset-token"),
+      expect.stringContaining(
+        "http://localhost:3000/auth/reset?redirect=%2Fapp%2Fnotes&token=reset-token",
+      ),
     );
     expect(logger.info).toHaveBeenNthCalledWith(
       3,
-      expect.stringContaining("https://example.com/magic-link?token=magic-token"),
+      expect.stringContaining(
+        "http://localhost:3000/auth/magic-link?redirect=%2Fapp%2Fnotes&token=magic-token",
+      ),
     );
   });
 

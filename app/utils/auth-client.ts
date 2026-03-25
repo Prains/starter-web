@@ -11,10 +11,6 @@ export const authClient = createAuthClient({
   plugins: [magicLinkClient()],
 });
 
-export function useAuthSession(...args: Parameters<typeof authClient.useSession>) {
-  return authClient.useSession(...args);
-}
+export const useAuthSession = () => authClient.useSession();
 
-export function getAuthSession(...args: Parameters<typeof authClient.getSession>) {
-  return authClient.getSession(...args);
-}
+export const getAuthSession = () => authClient.getSession();
