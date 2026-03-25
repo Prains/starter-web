@@ -2,6 +2,10 @@ import { NoteCreateOneSchema } from "../../../prisma/generated/zod/schemas/creat
 import { NoteDeleteOneSchema } from "../../../prisma/generated/zod/schemas/deleteOneNote.schema";
 import { NoteFindManySchema } from "../../../prisma/generated/zod/schemas/findManyNote.schema";
 import { NoteUpdateOneSchema } from "../../../prisma/generated/zod/schemas/updateOneNote.schema";
+import type {
+  NoteUncheckedCreateInput,
+  NoteUncheckedUpdateInput,
+} from "../../../prisma/generated/client/models/Note";
 import { NoteUncheckedCreateInputObjectSchema } from "../../../prisma/generated/zod/schemas/objects/NoteUncheckedCreateInput.schema";
 import { NoteUncheckedUpdateInputObjectSchema } from "../../../prisma/generated/zod/schemas/objects/NoteUncheckedUpdateInput.schema";
 import { authBase } from "../base";
@@ -47,9 +51,14 @@ export const listNotes = authBase
 export const createNote = authBase
   .input(noteCreateSchema)
   .handler(async ({ input, context }) => {
+    const createData = input.data as Omit<
+      NoteUncheckedCreateInput,
+      "id" | "user_id" | "created_at"
+    >;
+
     return await context.prisma.note.create({
       data: {
-        ...input.data,
+        ...createData,
         user_id: context.user.id,
       },
     });
@@ -59,6 +68,11 @@ export const updateNote = authBase
   .errors(noteErrors)
   .input(noteUpdateSchema)
   .handler(async ({ input, context, errors }) => {
+    const updateData = input.data as Omit<
+      NoteUncheckedUpdateInput,
+      "id" | "user_id" | "created_at" | "updated_at"
+    >;
+
     const existingNote = await context.prisma.note.findFirst({
       where: {
         id: input.where.id,
@@ -77,7 +91,7 @@ export const updateNote = authBase
       where: {
         id: existingNote.id,
       },
-      data: input.data,
+      data: updateData,
     });
   });
 
