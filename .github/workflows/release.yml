@@ -30,8 +30,8 @@ jobs:
       - name: Typecheck
         run: bunx nuxi typecheck
 
-      - name: Verify release contract tests
-        run: bunx vitest run test/release/manifest-contract.test.ts test/release/archive-contract.test.ts
+      - name: Verify starter contract tests
+        run: bunx vitest run test/config/root-config.test.ts test/release/manifest-contract.test.ts test/release/archive-contract.test.ts
 
       - name: Build release archive
         run: bun run release:build-archive

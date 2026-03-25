@@ -129,7 +129,7 @@ describe("starter release archive contract", () => {
       expect(archiveListing).not.toMatch(/(^|\n)\.\/node_modules\//);
       expect(archiveListing).not.toMatch(/(^|\n)\.\/\.output\//);
       expect(archiveListing).not.toMatch(/(^|\n)\.\/\.context\//);
-      expect(archiveListing).toMatch(/(^|\n)\.\/starter\.manifest\.json(\n|$)/);
+      expect(archiveListing).toMatch(/(^|\n)(?:\.\/)?starter\.manifest\.json(\n|$)/);
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
     }

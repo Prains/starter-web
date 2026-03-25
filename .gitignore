@@ -3,6 +3,8 @@
 /.output
 /dist
 /.env
+/.env.*
+!/.env.example
 /coverage
 /.data
 /.context
