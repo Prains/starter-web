@@ -1,0 +1,5 @@
+{
+  "$schema": "../node_modules/prisma-zod-generator/lib/config/schema.json",
+  "mode": "full",
+  "output": "./generated/zod"
+}
