@@ -200,12 +200,15 @@ describe("starter root configuration contract", () => {
     expect(envExample).toContain("DATABASE_URL=");
 
     for (const runtimeConfigKey of runtimeConfigKeys) {
-      expect(envExample).toContain(`${getRuntimeOverrideEnvName(runtimeConfigKey)}=`);
+      expect(envExample).toMatch(
+        new RegExp(`(^|\\n)${runtimeConfigKey}=`, "m"),
+      );
     }
 
     expect(envExample).toMatch(/smtp/i);
     expect(envExample).toMatch(/placeholder/i);
-    expect(envExample).toMatch(/fallback/i);
+    expect(envExample).toMatch(/NUXT_/i);
+    expect(envExample).toMatch(/override|mirror/i);
     expect(appConfig).toContain("__APP_NAME__");
   });
 });
