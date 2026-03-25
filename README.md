@@ -1,75 +1,69 @@
 # __APP_NAME__
 
-Public Plancy starter template built on Nuxt 4.
+Public Plancy starter template built on Nuxt 4, Better Auth, Prisma, oRPC, Pinia Colada, and Bun.
 
-## Setup
+## env setup
 
-Make sure to install dependencies:
+Install dependencies and create your local env file:
 
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
 bun install
+cp .env.example .env
 ```
 
-## Development Server
+The default `.env.example` values are local-safe:
 
-Start the development server on `http://localhost:3000`:
+- `AUTH_EMAIL_MODE=log` prints auth links to the terminal
+- `BETTER_AUTH_URL=http://localhost:3000` matches the default dev server
+- `DATABASE_URL` points at a local PostgreSQL database you should replace with your real local DB name
+
+## migrate + seed
+
+Generate Prisma artifacts, run the local migration flow, and load the deterministic demo data:
 
 ```bash
-# npm
-npm run dev
+bunx prisma generate
+bunx prisma migrate dev
+bunx prisma db seed
+```
 
-# pnpm
-pnpm dev
+After that, start the app:
 
-# yarn
-yarn dev
-
-# bun
+```bash
 bun run dev
 ```
 
-## Production
+The app runs on `http://localhost:3000`.
 
-Build the application for production:
+## demo credentials
+
+The starter seed creates a deterministic local demo account:
+
+- email: `demo@example.com`
+- password: `DemoPassword123!`
+
+It also creates a small set of demo notes so the authenticated notes module is usable immediately after `migrate + seed`.
+
+## auth email mode behavior
+
+This starter supports two auth delivery modes:
+
+- `AUTH_EMAIL_MODE=log`
+  - verification, reset, and magic-link URLs are printed to the terminal
+  - this is the recommended local development mode
+- `AUTH_EMAIL_MODE=smtp`
+  - Better Auth sends real emails through `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`
+  - use this when you want real inbox delivery outside the local log workflow
+
+Both modes still send users to the starter completion pages for verify/reset/magic-link flows.
+
+## verification commands
 
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+bun run lint
+bunx nuxi typecheck
+bunx prisma generate
+bunx prisma migrate dev
+bunx prisma db seed
+bunx vitest run
 ```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
