@@ -1,9 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { verifyPassword } from "better-auth/crypto";
 
-const defaultDatabaseUrl =
-  "postgresql://postgres:postgres@127.0.0.1:54329/starter_web_task2?schema=public";
-
 type DemoNote = {
   id: string;
   title: string;
@@ -45,13 +42,13 @@ type PrismaContract = {
       };
       include: {
         notes: {
-          where: {
+          orderBy: {
+            id: "asc";
+          };
+          where?: {
             id: {
               in: string[];
             };
-          };
-          orderBy: {
-            id: "asc";
           };
         };
       };
@@ -63,6 +60,14 @@ type PrismaContract = {
         id: string;
       };
       data: {
+        title: string;
+        content: string;
+      };
+    }): Promise<unknown>;
+    create(args: {
+      data: {
+        id: string;
+        user_id: string;
         title: string;
         content: string;
       };
@@ -87,7 +92,15 @@ async function loadSeedModules(): Promise<{
   prismaPool: PrismaPoolContract | null;
   seed: SeedContract;
 }> {
-  process.env.DATABASE_URL ??= defaultDatabaseUrl;
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error(
+      "DATABASE_URL must be set to run Prisma seed integration tests.",
+    );
+  }
+
+  process.env.DATABASE_URL = databaseUrl;
 
   const [prismaModule, seedModule] = await Promise.all([
     import("../../../prisma/client.ts"),
@@ -160,6 +173,28 @@ describe("runSeed", () => {
     const { prisma, seed } = await loadSeedModules();
 
     await seed.runSeed(prisma);
+    const createdDemoUser = await prisma.user.findUniqueOrThrow({
+      where: {
+        email: seed.DEMO_USER_EMAIL,
+      },
+      include: {
+        notes: {
+          orderBy: {
+            id: "asc",
+          },
+        },
+      },
+    });
+
+    await prisma.note.create({
+      data: {
+        id: "demo-note-extra",
+        user_id: createdDemoUser.id,
+        title: "extra note left behind by a prior run",
+        content: "should be removed on reseed",
+      },
+    });
+
     await prisma.note.update({
       where: {
         id: seed.DEMO_NOTES[0]!.id,
@@ -178,11 +213,6 @@ describe("runSeed", () => {
       },
       include: {
         notes: {
-          where: {
-            id: {
-              in: seed.DEMO_NOTES.map((note) => note.id),
-            },
-          },
           orderBy: {
             id: "asc",
           },

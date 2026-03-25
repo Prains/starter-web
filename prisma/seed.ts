@@ -70,9 +70,7 @@ export async function runSeed(prismaClient: SeedPrismaClient): Promise<void> {
 
   await prismaClient.note.deleteMany({
     where: {
-      id: {
-        in: DEMO_NOTES.map((note) => note.id),
-      },
+      user_id: demoUser.id,
     },
   });
 

@@ -2,7 +2,13 @@
 import withNuxt from "./.nuxt/eslint.config.mjs";
 export default withNuxt(
   {
-    ignores: [".bun/**", ".context/**", ".data/**", "dist/**"],
+    ignores: [
+      ".bun/**",
+      ".context/**",
+      ".data/**",
+      "dist/**",
+      "prisma/generated/**",
+    ],
   },
   {
     files: ["**/*.vue"],

@@ -74,7 +74,7 @@ function getFallbackEnvValues(prefix: string): Record<RuntimeConfigKey, string> 
   return {
     BETTER_AUTH_SECRET: `${prefix}-secret`,
     BETTER_AUTH_URL: `https://${prefix}.example.com`,
-    AUTH_EMAIL_MODE: `${prefix}-mode`,
+    AUTH_EMAIL_MODE: "smtp",
     SMTP_HOST: `${prefix}.smtp.example.com`,
     SMTP_PORT: prefix === "runtime" ? "2525" : "1025",
     SMTP_USER: `${prefix}-user`,

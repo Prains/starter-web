@@ -8,3 +8,4 @@
 /coverage
 /.data
 /.context
+/prisma/generated/zod/.prisma-zod-generator-manifest.json
