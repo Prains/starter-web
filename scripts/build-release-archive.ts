@@ -70,7 +70,7 @@ function listArchiveEntriesFromGit(repoRoot: string): string[] {
 
   const gitOutput = execFileSync(
     "git",
-    ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+    ["ls-files", "--cached", "-z"],
     { cwd: repoRoot, encoding: "buffer" },
   );
 

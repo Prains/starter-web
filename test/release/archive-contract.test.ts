@@ -112,6 +112,25 @@ describe("starter release archive contract", () => {
         "export default defineAppConfig({ appName: '__APP_NAME__' });\n",
       );
 
+      execFileSync("git", ["init", "-b", "develop"], { cwd: repoRoot });
+      execFileSync("git", ["config", "user.name", "starter-test"], { cwd: repoRoot });
+      execFileSync("git", ["config", "user.email", "starter-test@example.com"], {
+        cwd: repoRoot,
+      });
+      execFileSync(
+        "git",
+        [
+          "add",
+          "package.json",
+          "starter.manifest.json",
+          "nuxt.config.ts",
+          ".env.example",
+          "README.md",
+          "app/app.config.ts",
+        ],
+        { cwd: repoRoot },
+      );
+
       mkdirSync(path.join(repoRoot, "node_modules/demo"), { recursive: true });
       writeFileSync(path.join(repoRoot, "node_modules/demo/index.js"), "ignored\n");
       mkdirSync(path.join(repoRoot, ".output/server"), { recursive: true });
@@ -119,6 +138,8 @@ describe("starter release archive contract", () => {
       mkdirSync(path.join(repoRoot, ".context"), { recursive: true });
       writeFileSync(path.join(repoRoot, ".context/note.txt"), "ignored\n");
       writeFileSync(path.join(repoRoot, ".env"), "TOP_SECRET=1\n");
+      writeFileSync(path.join(repoRoot, ".env.local"), "TOP_SECRET_LOCAL=1\n");
+      writeFileSync(path.join(repoRoot, "local-secret.txt"), "SHOULD_NOT_SHIP\n");
 
       const archivePath = buildReleaseArchive({ repoRoot });
       const archiveListing = execFileSync("/usr/bin/tar", ["-tzf", archivePath], {
@@ -126,9 +147,11 @@ describe("starter release archive contract", () => {
       });
 
       expect(archiveListing).not.toMatch(/(^|\n)\.\/\.env(\n|$)/);
+      expect(archiveListing).not.toMatch(/(^|\n)(?:\.\/)?\.env\.local(\n|$)/);
       expect(archiveListing).not.toMatch(/(^|\n)\.\/node_modules\//);
       expect(archiveListing).not.toMatch(/(^|\n)\.\/\.output\//);
       expect(archiveListing).not.toMatch(/(^|\n)\.\/\.context\//);
+      expect(archiveListing).not.toMatch(/(^|\n)(?:\.\/)?local-secret\.txt(\n|$)/);
       expect(archiveListing).toMatch(/(^|\n)(?:\.\/)?starter\.manifest\.json(\n|$)/);
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
