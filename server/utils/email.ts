@@ -4,7 +4,6 @@ import {
   getAuthRuntimeConfigDefaults,
   parseAuthEnv,
 } from "../../shared/auth-env";
-import { buildStarterEmailLink } from "../../shared/auth-routes";
 
 type AuthEmailEnv = Record<string, string | undefined>;
 type AuthEmailLogger = {
@@ -59,10 +58,6 @@ function formatLogMessage(
   return `[auth:${kind}] ${recipient} -> ${url}`;
 }
 
-function formatStarterLink(url: string, token: string): string {
-  return buildStarterEmailLink(url, token);
-}
-
 export function createAuthEmailHandlers(options?: {
   env?: AuthEmailEnv;
   logger?: AuthEmailLogger;
@@ -77,28 +72,20 @@ export function createAuthEmailHandlers(options?: {
 
   if (authEnv.authEmailMode === "log") {
     return {
-      sendVerificationEmail: async ({ user, token, url }) => {
+      sendVerificationEmail: async ({ user, url }) => {
         logger.info(
           formatLogMessage(
             "verification",
             user.email,
-            formatStarterLink(url, token),
+            url,
           ),
         );
       },
-      sendResetPassword: async ({ user, token, url }) => {
-        logger.info(
-          formatLogMessage("reset", user.email, formatStarterLink(url, token)),
-        );
+      sendResetPassword: async ({ user, url }) => {
+        logger.info(formatLogMessage("reset", user.email, url));
       },
-      sendMagicLink: async ({ email, token, url }) => {
-        logger.info(
-          formatLogMessage(
-            "magic-link",
-            email,
-            formatStarterLink(url, token),
-          ),
-        );
+      sendMagicLink: async ({ email, url }) => {
+        logger.info(formatLogMessage("magic-link", email, url));
       },
     };
   }
@@ -121,28 +108,28 @@ export function createAuthEmailHandlers(options?: {
   const from = smtpConfig.from;
 
   return {
-    sendVerificationEmail: async ({ user, token, url }) => {
+    sendVerificationEmail: async ({ user, url }) => {
       await transport.sendMail({
         to: user.email,
         from,
         subject: "Verify your email",
-        text: `Verify your email by opening this link: ${formatStarterLink(url, token)}`,
+        text: `Verify your email by opening this link: ${url}`,
       });
     },
-    sendResetPassword: async ({ user, token, url }) => {
+    sendResetPassword: async ({ user, url }) => {
       await transport.sendMail({
         to: user.email,
         from,
         subject: "Reset your password",
-        text: `Reset your password by opening this link: ${formatStarterLink(url, token)}`,
+        text: `Reset your password by opening this link: ${url}`,
       });
     },
-    sendMagicLink: async ({ email, token, url }) => {
+    sendMagicLink: async ({ email, url }) => {
       await transport.sendMail({
         to: email,
         from,
         subject: "Your sign-in link",
-        text: `Sign in with this magic link: ${formatStarterLink(url, token)}`,
+        text: `Sign in with this magic link: ${url}`,
       });
     },
   };

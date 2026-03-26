@@ -139,19 +139,19 @@ describe("better auth server config", () => {
     expect(logger.info).toHaveBeenNthCalledWith(
       1,
       expect.stringContaining(
-        "http://localhost:3000/auth/verify?redirect=%2Fapp%2Fnotes&token=verify-token",
+        "http://localhost:3000/api/auth/verify-email?token=verify-token",
       ),
     );
     expect(logger.info).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining(
-        "http://localhost:3000/auth/reset?redirect=%2Fapp%2Fnotes&token=reset-token",
+        "http://localhost:3000/api/auth/reset-password/reset-token",
       ),
     );
     expect(logger.info).toHaveBeenNthCalledWith(
       3,
       expect.stringContaining(
-        "http://localhost:3000/auth/magic-link?redirect=%2Fapp%2Fnotes&token=magic-token",
+        "http://localhost:3000/api/auth/magic-link/verify?token=magic-token",
       ),
     );
   });

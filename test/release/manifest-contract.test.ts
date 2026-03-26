@@ -43,12 +43,8 @@ describe("starter manifest contract", () => {
       ...manifest.appNameFiles,
     ];
 
-    expect(manifest.packageNameFiles).toEqual(
-      expect.arrayContaining(["package.json", ".env.example", "bun.lock"]),
-    );
-    expect(manifest.appNameFiles).toEqual(
-      expect.arrayContaining(["README.md", "app/app.config.ts", ".env.example"]),
-    );
+    expect(manifest.packageNameFiles).toEqual(["package.json"]);
+    expect(manifest.appNameFiles).toEqual(["README.md", "app/app.config.ts"]);
 
     for (const relativePath of replacementFiles) {
       expect(existsSync(path.join(repoRoot, relativePath))).toBe(true);
@@ -60,12 +56,10 @@ describe("starter manifest contract", () => {
     expect(manifest.defaultGitInit).toBe(true);
     expect(manifest.templateVersion).toBe(packageJson.version);
 
-    for (const relativePath of manifest.packageNameFiles) {
-      expect(readRepoFile(relativePath)).toContain(manifest.packageNameToken);
-    }
-
-    for (const relativePath of manifest.appNameFiles) {
-      expect(readRepoFile(relativePath)).toContain(manifest.appNameToken);
-    }
+    expect(readRepoFile("package.json")).toContain(manifest.packageNameToken);
+    expect(readRepoFile("README.md")).toContain(manifest.appNameToken);
+    expect(readRepoFile("app/app.config.ts")).toContain(manifest.appNameToken);
+    expect(readRepoFile(".env.example")).not.toContain(manifest.packageNameToken);
+    expect(readRepoFile(".env.example")).not.toContain(manifest.appNameToken);
   });
 });

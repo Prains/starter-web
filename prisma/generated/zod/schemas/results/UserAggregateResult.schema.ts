@@ -8,8 +8,7 @@ export const UserAggregateResultSchema = z.object({  _count: z.object({
     createdAt: z.number(),
     updatedAt: z.number(),
     sessions: z.number(),
-    accounts: z.number(),
-    notes: z.number()
+    accounts: z.number()
   }).optional(),
   _min: z.object({
     id: z.string().nullable(),

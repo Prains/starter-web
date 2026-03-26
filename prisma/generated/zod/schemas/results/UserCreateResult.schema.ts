@@ -8,6 +8,5 @@ export const UserCreateResultSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   sessions: z.array(z.unknown()),
-  accounts: z.array(z.unknown()),
-  notes: z.array(z.unknown())
+  accounts: z.array(z.unknown())
 });

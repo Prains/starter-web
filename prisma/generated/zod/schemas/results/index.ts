@@ -50,16 +50,3 @@ export { VerificationDeleteManyResultSchema } from './VerificationDeleteManyResu
 export { VerificationAggregateResultSchema } from './VerificationAggregateResult.schema';
 export { VerificationGroupByResultSchema } from './VerificationGroupByResult.schema';
 export { VerificationCountResultSchema } from './VerificationCountResult.schema';
-export { NoteFindUniqueResultSchema } from './NoteFindUniqueResult.schema';
-export { NoteFindFirstResultSchema } from './NoteFindFirstResult.schema';
-export { NoteFindManyResultSchema } from './NoteFindManyResult.schema';
-export { NoteCreateResultSchema } from './NoteCreateResult.schema';
-export { NoteCreateManyResultSchema } from './NoteCreateManyResult.schema';
-export { NoteUpdateResultSchema } from './NoteUpdateResult.schema';
-export { NoteUpdateManyResultSchema } from './NoteUpdateManyResult.schema';
-export { NoteUpsertResultSchema } from './NoteUpsertResult.schema';
-export { NoteDeleteResultSchema } from './NoteDeleteResult.schema';
-export { NoteDeleteManyResultSchema } from './NoteDeleteManyResult.schema';
-export { NoteAggregateResultSchema } from './NoteAggregateResult.schema';
-export { NoteGroupByResultSchema } from './NoteGroupByResult.schema';
-export { NoteCountResultSchema } from './NoteCountResult.schema';

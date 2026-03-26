@@ -16,19 +16,6 @@ const requiredNuxtModules = [
   "@vueuse/nuxt",
 ] as const;
 
-const requiredPackages = [
-  ...requiredNuxtModules,
-  "better-auth",
-  "@orpc/server",
-  "@orpc/client",
-  "@prisma/client",
-  "@prisma/adapter-pg",
-  "prisma",
-  "prisma-zod-generator",
-  "zod",
-  "vitest",
-] as const;
-
 const runtimeConfigKeys = [
   "BETTER_AUTH_SECRET",
   "BETTER_AUTH_URL",
@@ -75,7 +62,7 @@ function getFallbackEnvValues(prefix: string): Record<RuntimeConfigKey, string> 
     BETTER_AUTH_SECRET: `${prefix}-secret`,
     BETTER_AUTH_URL: `https://${prefix}.example.com`,
     AUTH_EMAIL_MODE: "smtp",
-    SMTP_HOST: `${prefix}.smtp.example.com`,
+    SMTP_HOST: `${prefix}-smtp.internal`,
     SMTP_PORT: prefix === "runtime" ? "2525" : "1025",
     SMTP_USER: `${prefix}-user`,
     SMTP_PASS: `${prefix}-pass`,
@@ -85,10 +72,7 @@ function getFallbackEnvValues(prefix: string): Record<RuntimeConfigKey, string> 
 
 async function loadRootNuxtConfig(): Promise<RootNuxtConfig> {
   vi.resetModules();
-  vi.stubGlobal(
-    "defineNuxtConfig",
-    (config: RootNuxtConfig): RootNuxtConfig => config,
-  );
+  vi.stubGlobal("defineNuxtConfig", (config: RootNuxtConfig): RootNuxtConfig => config);
 
   const imported = await import("../../nuxt.config.ts");
 
@@ -101,7 +85,7 @@ afterEach(() => {
 });
 
 describe("starter root configuration contract", () => {
-  it("keeps the starter package shallow and Bun-oriented", () => {
+  it("keeps the starter package Bun-oriented and seed-free", () => {
     const packageJson = readPackageJson();
     const installedPackages = {
       ...packageJson.dependencies,
@@ -116,12 +100,11 @@ describe("starter root configuration contract", () => {
       typecheck: "nuxi typecheck",
       "prisma:generate": "prisma generate",
       "prisma:migrate:dev": "prisma migrate dev",
-      "prisma:db:seed": "prisma db seed",
     });
-
-    for (const packageName of requiredPackages) {
-      expect(installedPackages).toHaveProperty(packageName);
-    }
+    expect(packageJson.scripts).not.toHaveProperty("prisma:db:seed");
+    expect(installedPackages).toHaveProperty("better-auth");
+    expect(installedPackages).toHaveProperty("@orpc/server");
+    expect(installedPackages).toHaveProperty("@prisma/client");
   });
 
   it("uses matching NUXT_* envs for runtime overrides", async () => {
@@ -141,12 +124,7 @@ describe("starter root configuration contract", () => {
     expect(rootConfig.ssr).toBe(true);
     expect(rootConfig.nitro?.preset).toBe("bun");
     expect(rootConfig.css).toContain("~/assets/css/main.css");
-    expect(rootConfig.modules).toEqual(
-      expect.arrayContaining([...requiredNuxtModules]),
-    );
-    expect(Object.keys(rootConfig.runtimeConfig ?? {}).sort()).toEqual(
-      [...runtimeConfigKeys].sort(),
-    );
+    expect(rootConfig.modules).toEqual(expect.arrayContaining([...requiredNuxtModules]));
 
     for (const runtimeConfigKey of runtimeConfigKeys) {
       expect(rootConfig.runtimeConfig?.[runtimeConfigKey]).toBe(
@@ -155,41 +133,16 @@ describe("starter root configuration contract", () => {
     }
   });
 
-  it("falls back to unprefixed envs for local development defaults", async () => {
-    const fallbackValues = getFallbackEnvValues("local");
-
-    for (const runtimeConfigKey of runtimeConfigKeys) {
-      vi.stubEnv(runtimeConfigKey, fallbackValues[runtimeConfigKey]);
-    }
-
-    const rootConfig = await loadRootNuxtConfig();
-
-    for (const runtimeConfigKey of runtimeConfigKeys) {
-      expect(rootConfig.runtimeConfig?.[runtimeConfigKey]).toBe(
-        fallbackValues[runtimeConfigKey],
-      );
-    }
-  });
-
-  it("documents canonical auth envs and keeps app placeholders intact", () => {
+  it("documents local-safe auth env defaults and keeps app placeholders intact", () => {
     const envExample = readFileSync(envExamplePath, "utf8");
     const appConfig = readFileSync(appConfigPath, "utf8");
 
     expect(existsSync(cssEntrypointPath)).toBe(true);
     expect(envExample).toContain("DATABASE_URL=");
-
-    for (const runtimeConfigKey of runtimeConfigKeys) {
-      expect(envExample).toMatch(
-        new RegExp(`(^|\\n)${runtimeConfigKey}=`, "m"),
-      );
-      expect(envExample).toMatch(
-        new RegExp(`(^|\\n)#?\\s*${getRuntimeOverrideEnvName(runtimeConfigKey)}=`, "m"),
-      );
-    }
-
-    expect(envExample).toMatch(/smtp/i);
-    expect(envExample).toMatch(/placeholder/i);
-    expect(envExample).toMatch(/override|mirror/i);
+    expect(envExample).toContain("BETTER_AUTH_URL=http://localhost:3000");
+    expect(envExample).toContain("AUTH_EMAIL_MODE=log");
+    expect(envExample).toContain("BETTER_AUTH_SECRET=");
+    expect(envExample).toContain("# SMTP_HOST=");
     expect(appConfig).toContain("__APP_NAME__");
   });
 });

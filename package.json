@@ -1,6 +1,6 @@
 {
   "name": "__PACKAGE_NAME__",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,6 @@
     "test": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:db:seed": "prisma db seed",
     "release:build-archive": "bun scripts/build-release-archive.ts",
     "release:verify-archive": "bun scripts/verify-release-archive.ts"
   },
@@ -54,9 +53,6 @@
     "bun": ">=1.3.10"
   },
   "packageManager": "bun@1.3.10",
-  "prisma": {
-    "seed": "bun prisma/seed.ts"
-  },
   "trustedDependencies": [
     "@prisma/client",
     "@prisma/engines",

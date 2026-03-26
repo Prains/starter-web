@@ -7,4 +7,3 @@ export { UserResultSchema } from './User.result';
 export { SessionResultSchema } from './Session.result';
 export { AccountResultSchema } from './Account.result';
 export { VerificationResultSchema } from './Verification.result';
-export { NoteResultSchema } from './Note.result';

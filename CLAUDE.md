@@ -1,53 +1,51 @@
 # CLAUDE.md
 
-Claude entrypoint for this starter. Start here for the short rules, then use `.claude/docs/**` for the detailed conventions.
+## Repository shape
 
-## starter overview
+This repository is a minimal public Plancy starter:
 
-This repository is a public Plancy starter for Nuxt 4 applications with Better Auth, Prisma, oRPC, Pinia Colada, and Bun.
+- one public page at `/`
+- `NuxtWelcome`-based UI shell
+- live Prisma, Better Auth, and oRPC scaffolding
+- no product dashboards or sample business modules in the public route surface
 
-The starter keeps a single `notes` reference module to teach the baseline application flow:
+## Critical constraints
 
-- auth and redirect-safe route protection
-- typed RPC wrappers
-- overlay-driven modals
-- `UForm` plus Zod validation
-- Prisma-backed CRUD with generated schemas
+**Server Utils Auto-Import**: exports from `server/utils/*.ts` are Nuxt auto-imports. Do not import them manually.
 
-## critical rules
+**Pure Functions**: keep `server/utils/` pure unless a file is intentionally infrastructural, such as `auth.ts`, `email.ts`, `billing-service.ts`, `file-service.ts`, or `releases.ts`.
 
-- Treat `server/utils/*.ts` as Nuxt auto-imports unless a file is intentionally imported directly.
-- Keep `server/utils/` pure by default. Put `prisma.*` calls in RPC handlers, API routes, Prisma helpers, or explicit exceptions like `auth.ts` and `email.ts`.
-- Import Prisma from `prisma/client.ts`.
-- Keep Prisma configured with `engineType = "client"` in `prisma/schema.prisma`.
-- Use generated Prisma Zod schemas at the RPC boundary and small handwritten schemas for form state only.
-- Prefer wrapper composables around RPC access in the UI.
-- Open programmatic modals through `useOverlay()` and dedicated helpers from `app/composables/modals.ts`.
-- Use `UForm` plus Zod for forms. Submit actions stay inside the form; modals close only after success.
-- This starter uses Nuxt UI v4.
-  - `:items`, not `:options`
-  - `value-key`, not `value-attribute`
-  - `label-key`, not `option-attribute`
-- Keep files focused, use `kebab-case`, and avoid `any`.
+**Type Safety**:
 
-## verification commands
+- never use `any`
+- prefer `Temporal` for new date logic
+- import Prisma from `prisma/client.ts`
+
+**Nuxt UI v4**:
+
+- `:items`, not `:options`
+- `value-key`, not `value-attribute`
+- `label-key`, not `option-attribute`
+
+## Expected workflow
+
+Local bootstrap for generated apps should stay:
 
 ```bash
 bun install
-bun run lint
-bunx nuxi typecheck
-bunx prisma generate
 bunx prisma migrate dev
-bunx prisma db seed
-bunx vitest run
+bun run dev
 ```
 
-## deeper docs
+`.env.example` should require only `DATABASE_URL` editing for local startup. Auth and email defaults should remain safe for local development.
 
-- `.claude/docs/ui-patterns.md`
-- `.claude/docs/vue-patterns.md`
-- `.claude/docs/rpc-patterns.md`
-- `.claude/docs/auth-patterns.md`
-- `.claude/docs/prisma-patterns.md`
+## Verification
 
-The canonical source remains `.codex/docs/**`. Keep the Claude docs mirrored to those conventions rather than inventing separate starter rules.
+```bash
+bun run lint
+bun run typecheck
+bunx vitest run --project unit
+bunx vitest run --project nuxt
+```
+
+If a test run touches shared Prisma state, run those suites sequentially.

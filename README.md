@@ -1,69 +1,46 @@
 # __APP_NAME__
 
-Public Plancy starter template built on Nuxt 4, Better Auth, Prisma, oRPC, Pinia Colada, and Bun.
+Minimal public Plancy starter built on Nuxt 4.
 
-## env setup
+The UI intentionally ships with a single page, `/`, built around `NuxtWelcome`. Behind that minimal surface, Prisma, Better Auth, and oRPC stay wired and ready for real work.
 
-Install dependencies and create your local env file:
+## Setup
 
 ```bash
 bun install
-cp .env.example .env
 ```
 
-The default `.env.example` values are local-safe:
-
-- `AUTH_EMAIL_MODE=log` prints auth links to the terminal
-- `BETTER_AUTH_URL=http://localhost:3000` matches the default dev server
-- `DATABASE_URL` points at a local PostgreSQL database you should replace with your real local DB name
-
-## migrate + seed
-
-Generate Prisma artifacts, run the local migration flow, and load the deterministic demo data:
+Copy `.env.example` to `.env` if needed and set `DATABASE_URL`.
 
 ```bash
-bunx prisma generate
 bunx prisma migrate dev
-bunx prisma db seed
-```
-
-After that, start the app:
-
-```bash
 bun run dev
 ```
 
-The app runs on `http://localhost:3000`.
+The starter uses safe local defaults for auth and email:
 
-## demo credentials
-
-The starter seed creates a deterministic local demo account:
-
-- email: `demo@example.com`
-- password: `DemoPassword123!`
-
-It also creates a small set of demo notes so the authenticated notes module is usable immediately after `migrate + seed`.
-
-## auth email mode behavior
-
-This starter supports two auth delivery modes:
-
+- `BETTER_AUTH_URL=http://localhost:3000`
 - `AUTH_EMAIL_MODE=log`
-  - verification, reset, and magic-link URLs are printed to the terminal
-  - this is the recommended local development mode
-- `AUTH_EMAIL_MODE=smtp`
-  - Better Auth sends real emails through `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`
-  - use this when you want real inbox delivery outside the local log workflow
+- `BETTER_AUTH_SECRET` is stubbed for local development and should be replaced before production use
 
-Both modes still send users to the starter completion pages for verify/reset/magic-link flows.
+## What stays wired
 
-## verification commands
+- Prisma client and migrations
+- Better Auth server handler and client utilities
+- oRPC transport, context, and typed client bootstrap
+
+## What is intentionally absent
+
+- Auth pages
+- Dashboard and product example routes
+- Seed-driven demo content
+- Sample domain procedures in the public RPC surface
+
+## Production build
 
 ```bash
-bun run lint
-bunx nuxi typecheck
-bunx prisma generate
-bunx prisma migrate dev
-bunx prisma db seed
-bunx vitest run
+bun run build
+bun run preview
 ```
+
+Check the [Nuxt deployment documentation](https://nuxt.com/docs/getting-started/deployment) when you are ready to deploy.

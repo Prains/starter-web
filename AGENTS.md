@@ -1,54 +1,64 @@
 # AGENTS.md
 
-Codex entrypoint for this starter. Read this file first, then use `.codex/docs/**` for the deeper rules that shape day-to-day implementation.
+Codex entrypoint for the public Plancy starter.
 
-## starter overview
+## What this repository is
 
-This repository is a public Plancy starter built on Nuxt 4, Better Auth, Prisma, oRPC, Pinia Colada, and Bun.
+- One user-facing page: `/`
+- `NuxtWelcome`-based starter shell
+- Live Prisma, Better Auth, and oRPC scaffolding
+- No product routes, dashboards, or sample business modules in the public surface
 
-It intentionally keeps one small reference module, `notes`, to demonstrate the baseline patterns:
+## Working rules
 
-- authenticated routes and redirect-safe auth pages
-- Prisma + generated Zod schemas at the RPC boundary
-- composable wrappers around RPC access in the UI
-- `useOverlay()` plus dedicated overlay composables for programmatic modals
-- `UForm` plus Zod for form validation
+1. Read this file first.
+2. Treat `.codex/docs/**` as optional archived reference material for future build-out, not as the current starter contract.
+3. `CLAUDE.md` and `.claude/**` stay in sync for Claude, but the codex layer is the primary entrypoint.
 
-## critical rules
+## Critical constraints
 
-- `server/utils/*.ts` are Nuxt auto-imports. Do not manually import them unless the file is explicitly designed for direct imports.
-- Keep `server/utils/` pure by default. Database calls belong in RPC handlers, route handlers, Prisma helpers, or explicit exceptions such as `auth.ts` and `email.ts`.
-- Import Prisma from `prisma/client.ts`.
-- Keep the Prisma generator in `prisma/schema.prisma` on `engineType = "client"`.
-- Use generated Prisma Zod schemas for RPC inputs where possible. Use small handwritten schemas only for UI form state like the note modal.
-- In the UI, prefer wrapper composables such as `useNotes()`, `useCreateNote()`, `useUpdateNote()`, `useDeleteNote()` instead of calling RPC clients inline everywhere.
-- Programmatic modals should go through `useOverlay()` via dedicated helpers in `app/composables/modals.ts`.
-- Forms should use `UForm` plus Zod. Keep the submit button inside the form and close the modal only after a successful mutation.
-- This starter uses Nuxt UI v4, not v3.
-  - Use `:items`, not `:options`
-  - Use `value-key`, not `value-attribute`
-  - Use `label-key`, not `option-attribute`
-- Keep files focused and file names in `kebab-case`.
-- Avoid `any`.
+### Server utils auto-import
 
-## verification commands
+Exports from `server/utils/*.ts` are Nuxt auto-imports. Do not import them manually.
+
+### `server/utils/` purity
+
+Keep `server/utils/` as pure functions without `prisma.*` calls, except for files that are intentionally infrastructural:
+
+- `auth.ts`
+- `email.ts`
+- `billing-service.ts`
+- `file-service.ts`
+- `releases.ts`
+
+### Type safety
+
+- Do not use `any`.
+- Prefer `Temporal` over ad-hoc `Date` helpers when adding new date logic.
+- Import Prisma directly from `prisma/client.ts` when needed.
+
+### Current starter contract
+
+- Keep the root page minimal.
+- Keep Prisma, Better Auth, and oRPC genuinely wired.
+- Do not add demo CRUD modules or hidden product routes back into the public starter.
+- Default local bootstrap should remain:
 
 ```bash
 bun install
-bun run lint
-bunx nuxi typecheck
-bunx prisma generate
 bunx prisma migrate dev
-bunx prisma db seed
-bunx vitest run
+bun run dev
 ```
 
-## deeper docs
+## Verification
 
-- `.codex/docs/ui-patterns.md`
-- `.codex/docs/vue-patterns.md`
-- `.codex/docs/rpc-patterns.md`
-- `.codex/docs/auth-patterns.md`
-- `.codex/docs/prisma-patterns.md`
+Run the relevant checks after changes:
 
-`CLAUDE.md` and `.claude/docs/**` mirror the same starter conventions for Claude-based tooling, but the Codex layer is the source of truth.
+```bash
+bun run lint
+bun run typecheck
+bunx vitest run --project unit
+bunx vitest run --project nuxt
+```
+
+Run database-sensitive suites sequentially if you touch shared Prisma state.

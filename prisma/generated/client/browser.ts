@@ -37,8 +37,3 @@ export type Account = Prisma.AccountModel
  * 
  */
 export type Verification = Prisma.VerificationModel
-/**
- * Model Note
- * 
- */
-export type Note = Prisma.NoteModel
